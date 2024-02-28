@@ -1,4 +1,6 @@
-// ----------------------------HEADERS------------------------------------------------------
+// ----------------------------------------------------------------------------------
+// --HEADERS-------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------
 
 #include <pylon/PylonIncludes.h>
 #include <pylon/BaslerUniversalInstantCamera.h> 
@@ -9,42 +11,54 @@ using namespace Pylon;
 using namespace std;
 using namespace Basler_UniversalCameraParams;
 
-// -----------------------------BEGIN MAIN -------------------------------------------------
+// ----------------------------------------------------------------------------------
+// --BEGIN MAIN----------------------------------------------------------------------
+// ----------------------------------------------------------------------------------
 int main( int argc, char** argv)
 {
-    //--------------------------ASSIGN ARGUMENTS TO VARIABLES---------------------------
+    // ------------------------------------------------------------------------------
+    // --ASSIGN ARGUMENTS TO VARIABLES-----------------------------------------------
+    // ------------------------------------------------------------------------------
     
-    double FPS = atof(argv[1]);         // Frames per second, pulled from first input argument
-    int NumFrames = atof(argv[2]);      // Number of frames (FPS * Runtime(s)), pulled from second input argument
+    double FPS = atof(argv[1]); // Frames per second, pulled from first input argument
+    int NumFrames = atof(argv[2]); // Number of frames (FPS * Runtime(s))
 
     
-    //------------------------INIT PYLON--------------------------------------------------
+    // ------------------------------------------------------------------------------
+    // --INIT PYLON------------------------------------------------------------------
+    // ------------------------------------------------------------------------------
     // Exit code of sample application
     int exitCode = 0;
 
     // Before using pylon methods, initialize pylon runtime
     Pylon::PylonAutoInitTerm autoInitTerm; //PylonInitialize() will be called now
-
-    CBaslerUniversalInstantCamera camera( CTlFactory::GetInstance().CreateFirstDevice() );
+    
     // create first camera device
     // Use CBaslerUniversalInstantCamera or else it throws error
+    CBaslerUniversalInstantCamera camera( CTlFactory::GetInstance().CreateFirstDevice() );
+
     
-    //----------------------SETTINGS MANAGEMENT---------------------------------------------
+    // ------------------------------------------------------------------------------
+    // --SETTINGS MANAGEMENT---------------------------------------------------------
+    // ------------------------------------------------------------------------------
+    // Must open camera before modifying settings
     camera.Open();
     
     // open camera for settings parameters
     camera.AcquisitionFrameRate.SetValue(FPS);
     double FPS_out = camera.AcquisitionFrameRate.GetValue();
-
-    camera.AcquisitionMode.SetValue(AcquisitionMode_Continuous);
+    
     // set acquisition mode to continuous
-
+    camera.AcquisitionMode.SetValue(AcquisitionMode_Continuous);
+    
+    // set trigger to frame start
     camera.TriggerSelector.SetValue(TriggerSelector_FrameStart);
     camera.TriggerMode.SetValue(TriggerMode_Off);
-    // set trigger to frame start
+    
 
-
-    // ----------VIDEO MANAGEMENT----------
+    // ------------------------------------------------------------------------------
+    // --VIDEO MANAGEMENT------------------------------------------------------------
+    // ------------------------------------------------------------------------------
     // Create a video writer object.
     CVideoWriter videoWriter;
     // The parameter MaxNumBuffer can be used to control the count of buffers
@@ -73,14 +87,18 @@ int main( int argc, char** argv)
             FPS_out,
             90 );
 
-    //---PRINT TO CLI-----------------------------------------------------------------------
+    // ------------------------------------------------------------------------------
+    // --PRINTER HEADER INFO TO CLI--------------------------------------------------
+    // ------------------------------------------------------------------------------
     cout << "FPS: " << FPS_out << endl;
     cout << "No. of Frames: " << NumFrames << endl; 
     cout << "Camera Model: " << camera.GetDeviceInfo().GetModelName() << endl; // get the cameras model name and print to terminal
 
     camera.Close();
 
-    //-------------------START CAM/VIDEO--------------
+    // ------------------------------------------------------------------------------
+    // --START CAM / VIDEO ----------------------------------------------------------
+    // ------------------------------------------------------------------------------
     // Open the video writer.
     videoWriter.Open( "_TestVideo.mp4" );
 
@@ -119,7 +137,9 @@ int main( int argc, char** argv)
             << endl;
         }
 
-    // -----------------------EXIT PYLON---------------------------------------------------
+    // ------------------------------------------------------------------------------
+    // --EXIT PYLON------------------------------------------------------------------
+    // ------------------------------------------------------------------------------
     cerr <<endl << "Press enter to exit." << endl;
     while (cin.get() != '\n');
     
