@@ -46,6 +46,7 @@ int main( int argc, char** argv)
         camera.Open();
     
         // open camera for settings parameters
+        camera.AcquisitionFrameRateEnable.SetValue(true);
         camera.AcquisitionFrameRate.SetValue(FPS);
         double FPS_out = camera.AcquisitionFrameRate.GetValue();
     
@@ -111,12 +112,13 @@ int main( int argc, char** argv)
         // Start the grabbing of c_countOfImagesToGrab images.
         // The camera device is parameterized with a default configuration which
         // sets up free-running continuous acquisition.
-        camera.StartGrabbing( NumFrames );
+        camera.StartGrabbing( NumFrames + 1); //workaround -- getting "node is not writable on last frame"
 
         CGrabResultPtr ptrGrabResult;
 
         // Set frame counter to zero
         int64_t framecount = 0;
+        //camera.TimestampReset.Execute(); // **This timer reset function does not work?
 
         while (camera.IsGrabbing())
             {
