@@ -55,6 +55,7 @@ int main( int argc, char** argv)
         // set trigger to frame start
         camera.TriggerSelector.SetValue(TriggerSelector_FrameStart);
         camera.TriggerMode.SetValue(TriggerMode_Off);
+        
     
         // ------------------------------------------------------------------------------
         // --VIDEO MANAGEMENT------------------------------------------------------------
@@ -69,6 +70,11 @@ int main( int argc, char** argv)
         CIntegerParameter width( camera.GetNodeMap(), "Width" );
         CIntegerParameter height( camera.GetNodeMap(), "Height" );
         CEnumParameter pixelFormat( camera.GetNodeMap(), "PixelFormat" );
+
+        // Enable Chunks
+        //camera.ChunkModeActive.SetValue( true );
+        //camera.ChunkSelector.SetValue( ChunkSelector_Timestamp );
+        //camera.ChunkEnable.SetValue( true );
 
         // Optional: Depending on your camera or computer, you may not be able to save
         // a video without losing frames. Therefore, we limit the resolution:
@@ -109,6 +115,9 @@ int main( int argc, char** argv)
 
         CGrabResultPtr ptrGrabResult;
 
+        // Set frame counter to zero
+        int64_t framecount = 0;
+
         while (camera.IsGrabbing())
             {
                 // Wait for an image and then retrieve it. A timeout of 5000 ms is used.
@@ -118,10 +127,14 @@ int main( int argc, char** argv)
                 if (ptrGrabResult->GrabSucceeded())
                 {
                     // Access the image data.
-                    cout << "SizeX: " << ptrGrabResult->GetWidth() << endl;
-                    cout << "SizeY: " << ptrGrabResult->GetHeight() << endl;
-                    const uint8_t* pImageBuffer = (uint8_t*) ptrGrabResult->GetBuffer();
-                    cout << "Gray value of first pixel: " << (uint32_t) pImageBuffer[0] << endl << endl;
+                    //cout << "SizeX: " << ptrGrabResult->GetWidth() << endl;
+                    //cout << "SizeY: " << ptrGrabResult->GetHeight() << endl;
+                    //const uint8_t* pImageBuffer = (uint8_t*) ptrGrabResult->GetBuffer();
+                    //cout << "Gray value of first pixel: " << (uint32_t) pImageBuffer[0] << endl << endl;
+
+                    camera.TimestampLatch.Execute();
+                    int64_t ts = camera.TimestampLatchValue.GetValue();
+                    cout << "Frame: " << framecount << ", Timestamp: " << ts / 1E9 << endl; // 1 tick equals 1 GHz, divide by 1E9 to convert to sec
                 }
 
                 else
@@ -135,6 +148,8 @@ int main( int argc, char** argv)
                 cout << "Images Skipped = " << ptrGrabResult->GetNumberOfSkippedImages() << boolalpha
                 << "; Image has been converted = " << !videoWriter.CanAddWithoutConversion( ptrGrabResult )
                 << endl;
+
+                framecount = framecount + 1;
             }
 
     }
