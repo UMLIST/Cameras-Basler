@@ -19,6 +19,7 @@ https://www.baslerweb.com/en-us/software/pylon/.
 Follow the link to *Download pylon software* and select the download link for your operating system. For saving mp4 files, also download and install the *pylon Supplementary Package for MPEG-4* for your desired OS. This is noted in the download readme, but for Jetsons, you will also have to run a shell script called *setup-usb.sh*, which will be located in the pylon directly after installation. This installs udev-rules for permissions for basler cameras. I remember having to unplug the cameras/restart the Jetson to get it to work after. 
 
 *For Linux ARM: Members of Duke List Private Box can get download links here. I had a weird issue where I couldn't get the file to download on the Jetsons and had to post and pull from box:
+
     - pylon software: https://duke.box.com/s/r6rijs3y2lwku7hfia5f3d8yekfukobo 
     - pylon supplemental package for mpeg: https://duke.box.com/s/68zr2yrt6ods7inmjs54czns8uasucpo. 
 
