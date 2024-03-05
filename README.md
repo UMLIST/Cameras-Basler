@@ -10,11 +10,13 @@ Contains source code for collecting video with Basler cameras as well as documen
 Source code (C++) is in the *src* folder. It is built using Makefiles. It is based on provided C++ examples in the pylon documentation *Grab* and *Utility_GrabVideo* with some modifications to add timestamps/change input parameters. 
 1. Make your modications to *main.cpp* (or other functions, files)
 2. In the *src* folder, run *sudo make* to build the new exe file
-3. You can run the code without the shell script by then running *./main <FPS> <NumFrames>* in the CLI where FPS and NumFrames are you input arguments
+3. You can run the code without the shell script by then running *./main (FPS) (NumFrames)* in the CLI where FPS and NumFrames are you input arguments
 
 # Getting Started
 Basler cameras use their open-source pylon software/SDK compatible with multiple operating systems. The page for Pylon can be found here:
-https://www.baslerweb.com/en-us/software/pylon/. Follow the link to 'Download pylon software'and select the download link for your operating system. For saving mp4 files, also download and install the 'pylon Supplementary Package for MPEG-4' for your desired OS. 
+https://www.baslerweb.com/en-us/software/pylon/. 
+
+Follow the link to 'Download pylon software'and select the download link for your operating system. For saving mp4 files, also download and install the 'pylon Supplementary Package for MPEG-4' for your desired OS. 
 
 Included in the pylon software is the 'pylon Viewer' which is used for setting up the cameras. It is a GUI that allows you to configure settings, take quick video, and provides documentation on functions. This is your starting point to configure the cameras. Once you have your settings, you can move to writing code with the SDK. 
 
@@ -57,8 +59,10 @@ Next Steps:
     - Reformat into time relative to start of video
 - Handle multiple cameras
     - We probably need to refactor to collect on a hardware trigger to do this
+- Stream cameras (over UDP?) so they can be viewed during collection
 
 # Issues
 - Timestamp cannot be reset to zero each data run. There is a command to do this, but it doesn't seem to work
-- When I add timestamps, the last frame returns an error
+    - Workaround is to take the difference between each timestamp to get the delta T.
+- When I add timestamps, the last frame returns an error (all other frames save OK)
     - Quick workaround is just collect N+1 number of frames
