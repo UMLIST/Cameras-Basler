@@ -16,23 +16,11 @@ Source code (C++) is in the *src* folder. It is built using Makefiles. It is bas
 Basler cameras use their open-source pylon software/SDK compatible with multiple operating systems. The page for Pylon can be found here:
 https://www.baslerweb.com/en-us/software/pylon/. 
 
-Follow the link to 'Download pylon software'and select the download link for your operating system. For saving mp4 files, also download and install the 'pylon Supplementary Package for MPEG-4' for your desired OS. 
+Follow the link to *Download pylon software* and select the download link for your operating system. For saving mp4 files, also download and install the *pylon Supplementary Package for MPEG-4* for your desired OS. 
 
-Included in the pylon software is the 'pylon Viewer' which is used for setting up the cameras. It is a GUI that allows you to configure settings, take quick video, and provides documentation on functions. This is your starting point to configure the cameras. Once you have your settings, you can move to writing code with the SDK. 
+Included in the pylon software is the *pylon Viewer* which is used for setting up the cameras. It is a GUI that allows you to configure settings, take quick video, and provides documentation on functions. This is your starting point to configure the cameras. Once you have your settings, you can move to writing code with the SDK. 
 
 The SDK has support for C/C++/.NET. Basler also maintains an open-source Python wrapper pypylon here, if that is more your cup of tea: https://www.baslerweb.com/en-us/software/pylon/pypylon/. 
-
-# pylon Documentation 
-## Cameras
-Jumping off point for cameras is here: https://docs.baslerweb.com/cameras. 
-
-Go to Area Scan Cameras, find your camera model. Search under the left tab on the screen for things such as features specific to your camera model to find documentation, including example code and commands on how to use each feature. So helpful!
-
-## pylon SDK
-Jumping off point for software documentation is here: https://docs.baslerweb.com/software. 
-
-Under pylon camera software suite, you will find documentation on things such as the pylon viewer. Under pylon APIs, you will find all the documentation on the API for all supported languages (C/C++/.NET), including example code. Quick link to the samples manual is here: https://docs.baslerweb.com/pylonapi/pylon-sdk-samples-manual.
-
 
 # LIST Cameras
 LIST has the following camera models
@@ -45,6 +33,16 @@ LIST has the following camera models
 
 The dart R or ace2 models are probably what we should stick with. Ace2 has slightly more features, GigE options, bigger, bigger frames, slightly higher cost.
 
+# pylon Documentation 
+## Cameras
+Jumping off point for cameras is here: https://docs.baslerweb.com/cameras. 
+
+Go to Area Scan Cameras, find your camera model. Search under the left tab on the screen for things such as features specific to your camera model to find documentation, including example code and commands on how to use each feature. So helpful!
+
+## pylon SDK
+Jumping off point for software documentation is here: https://docs.baslerweb.com/software. 
+
+Under pylon camera software suite, you will find documentation on things such as the pylon viewer. Under pylon APIs, you will find all the documentation on the API for all supported languages (C/C++/.NET), including example code. Quick link to the samples manual is here: https://docs.baslerweb.com/pylonapi/pylon-sdk-samples-manual.
 
 # Status
 As of 3/5/24:
