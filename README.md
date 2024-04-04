@@ -70,3 +70,9 @@ Next Steps:
     - Workaround is to take the difference between each timestamp to get the delta T.
 - When I add timestamps, the last frame returns an error (all other frames save OK)
     - Quick workaround is just collect N+1 number of frames
+
+# Hardware Environmental Operating Ranges:
+- Basler cameras: Operating temp (0 - 50 deg C), storage temp (-20 to 80 deg C), 20 - 80% humidity, ambient temp should not exceed 50 deg C
+    - https://docs.baslerweb.com/daa3840-45uc#environmental-requirements
+- Jetson Orin Nano (storage range -40 to 80 deg C). See Jetson Orin Nano Series Thermal Design Guide for details
+    - https://developer.download.nvidia.com/assets/embedded/secure/jetson/orin_nano/docs/Jetson-Orin-Nano-Series-Modules-Data-Sheet_DS-11105-001_v1.2.pdf?BkM7tCy9Bncn1PR93wO9iTvIhIicu-lB6AgTZLR2t-4b79ndLawPGD33lFCNlo_0WKm2rfDM8rpoA8WN-cAVwwISDEd2FV-iK8EcAcs9S4egw81V0rSHgba6CdOZSXNrZGHh9B94J8a3WaJ2l7pGIo0HlzRcWc0labubQT8EQl_VAClEj8ncFpMvQLKzwzVH61qs_ffTVBP8OrSyxVffEI5DgORATyyhSj39sw==&t=eyJscyI6ImdzZW8iLCJsc2QiOiJodHRwczovL3d3dy5nb29nbGUuY29tLyJ9
