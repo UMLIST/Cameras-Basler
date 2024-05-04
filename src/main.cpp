@@ -4,26 +4,57 @@
 
 #include <pylon/PylonIncludes.h>
 #include <pylon/BaslerUniversalInstantCamera.h> 
+#include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string>
+#include <csignal>
 
 using namespace Pylon;
 using namespace std;
 using namespace Basler_UniversalCameraParams;
 
+// Flag to indicate if Ctrl+C signal is received
+volatile sig_atomic_t stopFlag = 0;
+
+// Signal handler for Ctrl+C
+void signalHandler(int signal) {
+    stopFlag = 1;
+}
+
 // ----------------------------------------------------------------------------------
 // --BEGIN MAIN----------------------------------------------------------------------
 // ----------------------------------------------------------------------------------
-int main( int argc, char** argv)
-{
+int main(int argc, char** argv) {
     // ------------------------------------------------------------------------------
     // --ASSIGN ARGUMENTS TO VARIABLES-----------------------------------------------
-    // ------------------------------------------------------------------------------
+    // -------------------------------------------------z-----------------------------
     
-    double FPS = atof(argv[1]); // Frames per second, pulled from first input argument
-    int NumFrames = atof(argv[2]); // Number of frames (FPS * Runtime(s))
+    double FPS = 25; // Default value for FPS
+    int NumFrames = -1; // Default value for NumFrames
+    string autoExposureMode = "Off"; // Default value for autoExposureMode
+    double exposureTime = -1; // Default value for exposureTime
+    
+    // Parse command line arguments
+    for (int i = 1; i < argc; ++i) {
+        string arg = argv[i];
+        if (arg == "-fps" && i + 1 < argc) {
+            FPS = atof(argv[i + 1]);
+        } else if (arg == "-frames" && i + 1 < argc) {
+            NumFrames = atoi(argv[i + 1]);
+        } else if (arg == "-autoexposure" && i + 1 < argc) {
+            autoExposureMode = argv[i + 1];
+        } else if (arg == "-exposuretime" && i + 1 < argc) {
+            exposureTime = atof(argv[i + 1]);
+        }
+    }
+    
+    // Check if mandatory argument FPS is provided
+    if (FPS == -1) {
+        cerr << "FPS is a mandatory argument." << endl;
+        return 1;
+    }
 
-    
     // ------------------------------------------------------------------------------
     // --INIT PYLON------------------------------------------------------------------
     // ------------------------------------------------------------------------------
@@ -35,6 +66,9 @@ int main( int argc, char** argv)
     
     try
     {
+        // Install signal handler for Ctrl+C
+        signal(SIGINT, signalHandler);
+
         // create first camera device
         // Use CBaslerUniversalInstantCamera or else it throws error
         CBaslerUniversalInstantCamera camera( CTlFactory::GetInstance().CreateFirstDevice() );
@@ -44,20 +78,40 @@ int main( int argc, char** argv)
         // ------------------------------------------------------------------------------
         // Must open camera before modifying settings
         camera.Open();
-    
-        // open camera for settings parameters
+
+        // Set FPS
         camera.AcquisitionFrameRateEnable.SetValue(true);
         camera.AcquisitionFrameRate.SetValue(FPS);
         double FPS_out = camera.AcquisitionFrameRate.GetValue();
     
-        // set acquisition mode to continuous
-        camera.AcquisitionMode.SetValue(AcquisitionMode_Continuous);
-    
+        // Set acquisition mode to continuous if NumFrames not provided
+        if (NumFrames == -1) {
+            camera.AcquisitionMode.SetValue(AcquisitionMode_Continuous);
+        }
+        else {
+            NumFrames = NumFrames + 1;
+        }
+
+        // Set auto exposure mode
+        if (autoExposureMode == "Continuous") {
+            camera.ExposureAuto.SetValue(ExposureAuto_Continuous);
+        } else if (autoExposureMode == "Once") {
+            camera.ExposureAuto.SetValue(ExposureAuto_Once);
+        } else {
+            camera.ExposureAuto.SetValue(ExposureAuto_Off);
+        }
+
+        // Set exposure time if provided
+        if (exposureTime > 0) {
+            camera.ExposureAuto.SetValue(ExposureAuto_Off);
+            camera.ExposureTime.SetValue(exposureTime);
+        }
+        
         // set trigger to frame start
         camera.TriggerSelector.SetValue(TriggerSelector_FrameStart);
         camera.TriggerMode.SetValue(TriggerMode_Off);
-        
-    
+
+
         // ------------------------------------------------------------------------------
         // --VIDEO MANAGEMENT------------------------------------------------------------
         // ------------------------------------------------------------------------------
@@ -100,8 +154,8 @@ int main( int argc, char** argv)
         cout << "FPS: " << FPS_out << endl;
         cout << "No. of Frames: " << NumFrames << endl; 
         cout << "Camera Model: " << camera.GetDeviceInfo().GetModelName() << endl; // get the cameras model name and print to terminal
-
-        camera.Close();
+        
+        // camera.Close(); // NOTE: commented out, causing errors
 
         // ------------------------------------------------------------------------------
         // --START CAM / VIDEO ----------------------------------------------------------
@@ -112,22 +166,22 @@ int main( int argc, char** argv)
         // Start the grabbing of c_countOfImagesToGrab images.
         // The camera device is parameterized with a default configuration which
         // sets up free-running continuous acquisition.
-        camera.StartGrabbing( NumFrames + 1); //workaround -- getting "node is not writable on last frame"
+        camera.StartGrabbing(NumFrames);
 
         CGrabResultPtr ptrGrabResult;
 
         // Set frame counter to zero
         int64_t framecount = 0;
-        //camera.TimestampReset.Execute(); // **This timer reset function does not work?
+        //camera.TimestampReset.Execute(); // **This timer reset function does not work?        // Start the grabbing of NumFrames images if specified, otherwise, grab continuously
 
-        while (camera.IsGrabbing())
+        while (!stopFlag && (NumFrames == -1 || framecount < NumFrames))
+        {
+            // Wait for an image and then retrieve it. A timeout of 5000 ms is used.
+            camera.RetrieveResult( 5000, ptrGrabResult, TimeoutHandling_ThrowException );
+
+            // Image grabbed successfully?
+            if (ptrGrabResult->GrabSucceeded())
             {
-                // Wait for an image and then retrieve it. A timeout of 5000 ms is used.
-                camera.RetrieveResult( 5000, ptrGrabResult, TimeoutHandling_ThrowException );
-
-                // Image grabbed successfully?
-                if (ptrGrabResult->GrabSucceeded())
-                {
                     // Access the image data.
                     //cout << "SizeX: " << ptrGrabResult->GetWidth() << endl;
                     //cout << "SizeY: " << ptrGrabResult->GetHeight() << endl;
@@ -137,38 +191,39 @@ int main( int argc, char** argv)
                     camera.TimestampLatch.Execute();
                     int64_t ts = camera.TimestampLatchValue.GetValue();
                     cout << "Frame: " << framecount << ", Timestamp: " << ts / 1E9 << endl; // 1 tick equals 1 GHz, divide by 1E9 to convert to sec
-                }
-
-                else
-                {
-                    cout << "Error: " << std::hex << ptrGrabResult->GetErrorCode() << std::dec << " " << ptrGrabResult->GetErrorDescription() << endl;
-                }
+            }
+            
+            else
+            {
+                cout << "Error: " << std::hex << ptrGrabResult->GetErrorCode() << std::dec << " " << ptrGrabResult->GetErrorDescription() << endl;
+            }
 
             videoWriter.Add( ptrGrabResult );
 
-                // If images are skipped, writing video frames takes too much processing time.
-                cout << "Images Skipped = " << ptrGrabResult->GetNumberOfSkippedImages() << boolalpha
-                << "; Image has been converted = " << !videoWriter.CanAddWithoutConversion( ptrGrabResult )
-                << endl;
+            // If images are skipped, writing video frames takes too much processing time.
+            cout << "Images Skipped = " << ptrGrabResult->GetNumberOfSkippedImages() << boolalpha
+            << "; Image has been converted = " << !videoWriter.CanAddWithoutConversion( ptrGrabResult )
+            << endl;
 
-                framecount = framecount + 1;
-            }
+            framecount++;
+
+        }
 
     }
-    catch(const GenericException& e)
+    catch (const GenericException& e) 
     {
-        cerr << "an exception has occured" << endl 
-        << e.GetDescription() << endl;
+        cerr << "An exception has occurred" << endl 
+             << e.GetDescription() << endl;
         exitCode = 1;
     }
-    
+
 
     // ------------------------------------------------------------------------------
     // --EXIT PYLON------------------------------------------------------------------
     // ------------------------------------------------------------------------------
-    cerr <<endl << "Press enter to exit." << endl;
+    cerr << "Press enter to exit." << endl;
     while (cin.get() != '\n');
-    
+
 
     return exitCode;
 
