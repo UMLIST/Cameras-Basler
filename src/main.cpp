@@ -35,6 +35,8 @@ int main(int argc, char** argv)
     int NumFrames = -1; // Default value for NumFrames
     string autoExposureMode = "Off"; // Default value for autoExposureMode
     double exposureTime = -1; // Default value for exposureTime
+    bool crop1080 = false; // Default value for crop1080
+    bool crop720 = false; // Default value for crop720
     
     // Parse command line arguments
     for (int i = 1; i < argc; ++i) {
@@ -47,6 +49,10 @@ int main(int argc, char** argv)
             autoExposureMode = argv[i + 1];
         } else if (arg == "-exposuretime" && i + 1 < argc) {
             exposureTime = atof(argv[i + 1]);
+        } else if  (arg == "-crop1080") {
+            crop1080 = true;
+        } else if  (arg == "-crop720") {
+            crop720 = true;
         }
     }
     
@@ -129,20 +135,41 @@ int main(int argc, char** argv)
         // allocated for grabbing. The default value of this parameter is 10.
         camera.MaxNumBuffer = 10;
 
-        // Get the required camera settings.
-        CIntegerParameter width( camera.GetNodeMap(), "Width" );
-        CIntegerParameter height( camera.GetNodeMap(), "Height" );
-        CEnumParameter pixelFormat( camera.GetNodeMap(), "PixelFormat" );
-
         // Enable Chunks
         //camera.ChunkModeActive.SetValue( true );
         //camera.ChunkSelector.SetValue( ChunkSelector_Timestamp );
         //camera.ChunkEnable.SetValue( true );
 
         // Optional: Depending on your camera or computer, you may not be able to save
-        // a video without losing frames. Therefore, we limit the resolution:
-        width.TrySetValue( 1920, IntegerValueCorrection_Nearest );
-        height.TrySetValue( 1080, IntegerValueCorrection_Nearest );
+        // a video without losing frames.
+
+        // Get the required camera settings.
+        CIntegerParameter width( camera.GetNodeMap(), "Width" );
+        CIntegerParameter height( camera.GetNodeMap(), "Height" );
+        CEnumParameter pixelFormat( camera.GetNodeMap(), "PixelFormat" );
+        
+        if (crop1080) {
+            // CROPPED 1080p
+            width.TrySetValue( 1920, IntegerValueCorrection_Nearest );
+            height.TrySetValue( 1080, IntegerValueCorrection_Nearest );
+            // Center the image ROI
+            camera.BslCenterX.Execute();
+            camera.BslCenterY.Execute();
+        } else if (crop720) {
+            // CROPPED 720p
+            width.TrySetValue( 1280, IntegerValueCorrection_Nearest );
+            height.TrySetValue( 720, IntegerValueCorrection_Nearest );
+            // Center the image ROI
+            camera.BslCenterX.Execute();
+            camera.BslCenterY.Execute();
+        }
+        else {
+            /* Max Resolution */
+            width.TrySetValue( 3860, IntegerValueCorrection_Nearest );
+            height.TrySetValue( 2178, IntegerValueCorrection_Nearest );
+        }
+
+
 
         // Map the pixelType
         CPixelTypeMapper pixelTypeMapper( &pixelFormat );
