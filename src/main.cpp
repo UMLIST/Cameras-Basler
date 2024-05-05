@@ -31,7 +31,7 @@ int main(int argc, char** argv)
     // --ASSIGN ARGUMENTS TO VARIABLES-----------------------------------------------
     // ------------------------------------------------------------------------------
     
-    double FPS = 25; // Default value for FPS
+    double FPS = -1; // Default value for FPS
     int NumFrames = -1; // Default value for NumFrames
     string autoExposureMode = "Off"; // Default value for autoExposureMode
     double exposureTime = -1; // Default value for exposureTime
@@ -42,7 +42,7 @@ int main(int argc, char** argv)
         if (arg == "-fps" && i + 1 < argc) {
             FPS = atof(argv[i + 1]);
         } else if (arg == "-frames" && i + 1 < argc) {
-            NumFrames = atoi(argv[i + 1]);
+            NumFrames = atoi(argv[i + 1]) + 1;
         } else if (arg == "-autoexposure" && i + 1 < argc) {
             autoExposureMode = argv[i + 1];
         } else if (arg == "-exposuretime" && i + 1 < argc) {
@@ -80,17 +80,12 @@ int main(int argc, char** argv)
         // Must open camera before modifying settings
         camera.Open();
 
-        // Set FPS
-        camera.AcquisitionFrameRateEnable.SetValue(true);
-        camera.AcquisitionFrameRate.SetValue(FPS);
-        double FPS_out = camera.AcquisitionFrameRate.GetValue();
+        // Set the pixel format to Bayer RG 8 ("Raw", note: faster than RGB 8)
+        camera.PixelFormat.SetValue(PixelFormat_BayerRG8);
     
         // Set acquisition mode to continuous if NumFrames not provided
         if (NumFrames == -1) {
             camera.AcquisitionMode.SetValue(AcquisitionMode_Continuous);
-        }
-        else {
-            NumFrames = NumFrames + 1;
         }
 
         // Set auto exposure mode
@@ -111,6 +106,18 @@ int main(int argc, char** argv)
         // set trigger to frame start
         camera.TriggerSelector.SetValue(TriggerSelector_FrameStart);
         camera.TriggerMode.SetValue(TriggerMode_Off);
+
+        // Set FPS
+        camera.AcquisitionFrameRateEnable.SetValue(true);
+        camera.AcquisitionFrameRate.SetValue(FPS);
+        double FPS_target = camera.AcquisitionFrameRate.GetValue();
+        // Get the resulting frame rate
+        double FPS_set = camera.ResultingFrameRate.GetValue();
+        // cout << "Resulting Frame Rate: " << d << endl;
+        if (FPS_target != FPS_set) {
+            cerr << "Could not set FPS to " << FPS_target << ". Using " << FPS_set << " instead." << endl;
+        }
+
 
 
         // ------------------------------------------------------------------------------
@@ -146,14 +153,15 @@ int main(int argc, char** argv)
         (uint32_t) width.GetValue(),
                 (uint32_t) height.GetValue(),
                 pixelType,
-                FPS_out,
+                FPS_set,
                 90 );
 
         // ------------------------------------------------------------------------------
         // --PRINTER HEADER INFO TO CLI--------------------------------------------------
         // ------------------------------------------------------------------------------
-        cout << "FPS: " << FPS_out << endl;
-        cout << "No. of Frames: " << NumFrames << endl; 
+        cout << "Recording Parameters:" << endl;
+        cout << "FPS: " << FPS_set << endl;
+        cout << "No. of Frames: " << NumFrames-1 << endl; 
         cout << "Camera Model: " << camera.GetDeviceInfo().GetModelName() << endl; // get the cameras model name and print to terminal
         
         // camera.Close(); // NOTE: commented out, causing errors
@@ -162,7 +170,7 @@ int main(int argc, char** argv)
         // --START CAM / VIDEO ----------------------------------------------------------
         // ------------------------------------------------------------------------------
         // Open the video writer.
-        videoWriter.Open( "_TestVideo.mp4" );
+        videoWriter.Open( "test.mp4" );
 
         // Start the grabbing of c_countOfImagesToGrab images.
         // The camera device is parameterized with a default configuration which
