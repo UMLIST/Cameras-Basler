@@ -9,6 +9,8 @@
 #include <stdlib.h>
 #include <string>
 #include <csignal>
+#include <chrono>
+#include <ctime>
 
 using namespace Pylon;
 using namespace std;
@@ -20,6 +22,36 @@ volatile sig_atomic_t stopFlag = 0;
 // Signal handler for Ctrl+C
 void signalHandler(int signal) {
     stopFlag = 1;
+}
+
+// Get the current system time (to microsecond precision)
+std::tm get_PC_time() {
+    auto now = std::chrono::high_resolution_clock::now();
+    auto now_time_t = std::chrono::high_resolution_clock::to_time_t(now);
+    return *std::localtime(&now_time_t);
+}
+
+// Print PC time (only)
+void print_PC_time(const std::tm &local_time) {
+    auto now = std::chrono::high_resolution_clock::now();
+    auto micros = std::chrono::duration_cast<std::chrono::microseconds>(now.time_since_epoch()).count() % 1000000;
+
+    std::cout << "Current time: " 
+            << std::put_time(&local_time, "%a %b %e %Y %H:%M:%S")
+            << "." << std::setw(6) << std::setfill('0') << micros << std::endl;
+}
+
+void print_timestamps(const std::tm &local_time, int64_t camera_timestamp, int framecount) {
+    auto now = std::chrono::high_resolution_clock::now();
+    auto micros = std::chrono::duration_cast<std::chrono::microseconds>(now.time_since_epoch()).count();
+
+    // Print the PC time
+    std::cout << "Current time: " 
+            << std::put_time(&local_time, "%a %b %e %Y %H:%M:%S")
+            << "." << std::setw(6) << std::setfill('0') << micros % 1000000 << ", ";
+
+    // Print the camera timestamp
+    std::cout << "Frame: " << framecount << ", Cam Timestamp: " << camera_timestamp / 1E9 << std::endl; // divide by 1E9 to convert ticks to sec
 }
 
 // ----------------------------------------------------------------------------------
@@ -208,8 +240,29 @@ int main(int argc, char** argv)
 
         // Set frame counter to zero
         int64_t framecount = 0;
-        //camera.TimestampReset.Execute(); // **This timer reset function does not work?        // Start the grabbing of NumFrames images if specified, otherwise, grab continuously
+        // camera.TimestampReset.Execute(); // **This timer reset function does not work?        // Start the grabbing of NumFrames images if specified, otherwise, grab continuously
 
+        // // Get the current system time
+        // auto now = std::chrono::high_resolution_clock::now();
+        // auto now_time_t = std::chrono::high_resolution_clock::to_time_t(now);
+        // std::tm *local_time = std::localtime(&now_time_t);
+        // auto micros = std::chrono::duration_cast<std::chrono::microseconds>(now.time_since_epoch()).count() % 1000000; // Extract microseconds
+        // // Print the time
+        // std::cout << "Current time: " 
+        //         << std::put_time(local_time, "%a %b %e %Y %H:%M:%S")
+        //         << "." << std::setw(6) << std::setfill('0') << micros << std::endl;
+
+        // Get the PC time
+        std::tm local_time = get_PC_time();
+        // print_PC_time(local_time);
+
+        // Get starting camera timestamp
+        camera.TimestampLatch.Execute();
+        int64_t ts_START = camera.TimestampLatchValue.GetValue();
+        // cout << "Frame: " << framecount << ", Start Cam Timestamp: " << ts_START / 1E9 << endl; // divide by 1E9 to convert ticks to sec
+
+        print_timestamps(local_time, ts_START, framecount);
+    
         while (!stopFlag && (NumFrames == -1 || framecount < NumFrames))
         {
             // Wait for an image and then retrieve it. A timeout of 5000 ms is used.
@@ -224,9 +277,23 @@ int main(int argc, char** argv)
                     //const uint8_t* pImageBuffer = (uint8_t*) ptrGrabResult->GetBuffer();
                     //cout << "Gray value of first pixel: " << (uint32_t) pImageBuffer[0] << endl << endl;
 
+                    /* Get CAMERA Time //
+                    Timestamp Tick Frequency for daA3840-45uc:
+                     1 GHz (= 1 000 000 000 ticks per second, 1 tick = 1 ns) */
                     camera.TimestampLatch.Execute();
                     int64_t ts = camera.TimestampLatchValue.GetValue();
-                    cout << "Frame: " << framecount << ", Timestamp: " << ts / 1E9 << endl; // 1 tick equals 1 GHz, divide by 1E9 to convert to sec
+                    
+                    // Get PC time
+                    std::tm local_time = get_PC_time();
+
+                    // Print the PC time and camera timestamp
+                    print_timestamps(local_time, ts, framecount);
+
+                    /* Print timestamps separately... */
+                    // cout << "Frame: " << framecount << ", Cam Timestamp: " << ts / 1E9 << endl; // divide by 1E9 to convert ticks to sec
+                    // std::tm local_time = get_PC_time();
+                    // print_PC_time(local_time);
+
             }
             
             else
@@ -237,9 +304,9 @@ int main(int argc, char** argv)
             videoWriter.Add( ptrGrabResult );
 
             // If images are skipped, writing video frames takes too much processing time.
-            cout << "Images Skipped = " << ptrGrabResult->GetNumberOfSkippedImages() << boolalpha
-            << "; Image has been converted = " << !videoWriter.CanAddWithoutConversion( ptrGrabResult )
-            << endl;
+            // cout << "Images Skipped = " << ptrGrabResult->GetNumberOfSkippedImages() << boolalpha
+            // << "; Image has been converted = " << !videoWriter.CanAddWithoutConversion( ptrGrabResult )
+            // << endl;
 
             framecount++;
 
