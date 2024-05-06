@@ -58,8 +58,10 @@ void print_timestamps(const std::pair<std::tm, long long>& timePair, int64_t cam
         << PCtime.tm_hour << ":"
         << PCtime.tm_min << ":"
         << PCtime.tm_sec << "."
-        << timePair.second << ", ";
-    std::cout << "Frame: " << framecount << ", Cam Timestamp: " << camera_timestamp / 1E9 << std::endl;
+        // << timePair.second << ", ";
+        << std::setw(6) << std::setfill('0') << timePair.second << ", ";
+    std::cout << "Frame: " << framecount
+    << ", Cam Timestamp: " << std::fixed << std::setprecision(6) << camera_timestamp / 1E9 << std::endl;
 }
 
 
@@ -91,7 +93,7 @@ void logTimestamps(const std::pair<std::tm, long long>& timePair, int64_t camera
     logFile << framecount << ","
     << std::put_time(&PCtime, "%Y-%m-%d %H:%M:%S")
         << "." << std::setw(6) << std::setfill('0') << timePair.second
-        << "," << camera_timestamp / 1E9 << "\n";
+        << "," << std::fixed << std::setprecision(6) << camera_timestamp / 1E9 << "\n";
 }
 
 
@@ -200,8 +202,12 @@ int main(int argc, char** argv)
         // Get the resulting frame rate
         double FPS_set = camera.ResultingFrameRate.GetValue();
         // cout << "Resulting Frame Rate: " << d << endl;
-        if (FPS_target != FPS_set) {
-            cerr << "Could not set FPS to " << FPS_target << ". Using " << FPS_set << " instead." << endl;
+        // if (FPS_target != FPS_set) {
+        if (std::abs(FPS_target - FPS_set) > .01) {
+            cerr << "WARNING: Could not set FPS to " << FPS_target << ". Using " << FPS_set << " instead." << endl;
+        }
+        else {
+            cout << "FPS set to " << FPS_set << endl;
         }
 
 
@@ -282,14 +288,19 @@ int main(int argc, char** argv)
         // Set frame counter to zero
         int64_t framecount = 0;
         // camera.TimestampReset.Execute(); // **This timer reset function does not work?        // Start the grabbing of NumFrames images if specified, otherwise, grab continuously
+        // INodeMap& nodemap = camera.GetNodeMap();
+        // Take a "snapshot" of the camera's current timestamp value
+        // CCommandParameter(&camera.GetNodeMap(), "TimestampReset").Execute();
 
         // Get the PC time
         auto local_time = get_PC_time();
         print_PC_time(local_time);
 
         // Get starting camera timestamp
+        // "There is an unspecified and variable delay between sending the TimestampLatch command and it becoming effective."
         camera.TimestampLatch.Execute();
         int64_t ts_START = camera.TimestampLatchValue.GetValue();
+
 
         print_timestamps(local_time, ts_START, framecount);
 
@@ -359,7 +370,7 @@ int main(int argc, char** argv)
         exitCode = 1;
     }
 
-    closeLogFile()
+    closeLogFile();
 
     // ------------------------------------------------------------------------------
     // --EXIT PYLON------------------------------------------------------------------
