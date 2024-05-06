@@ -5,6 +5,7 @@
 #include <pylon/PylonIncludes.h>
 #include <pylon/BaslerUniversalInstantCamera.h> 
 #include <iostream>
+#include <fstream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>
@@ -16,6 +17,9 @@ using namespace Pylon;
 using namespace std;
 using namespace Basler_UniversalCameraParams;
 
+// Object for log file
+std::ofstream logFile;
+
 // Flag to indicate if Ctrl+C signal is received
 volatile sig_atomic_t stopFlag = 0;
 
@@ -24,34 +28,78 @@ void signalHandler(int signal) {
     stopFlag = 1;
 }
 
-// Get the current system time (to microsecond precision)
-std::tm get_PC_time() {
+std::pair<std::tm, long long> get_PC_time() {
     auto now = std::chrono::high_resolution_clock::now();
     auto now_time_t = std::chrono::high_resolution_clock::to_time_t(now);
-    return *std::localtime(&now_time_t);
+    std::tm time = *std::localtime(&now_time_t);
+    auto microseconds = std::chrono::duration_cast<std::chrono::microseconds>(now.time_since_epoch()).count() % 1000000;
+    return {time, microseconds};
 }
 
-// Print PC time (only)
-void print_PC_time(const std::tm &local_time) {
-    auto now = std::chrono::high_resolution_clock::now();
-    auto micros = std::chrono::duration_cast<std::chrono::microseconds>(now.time_since_epoch()).count() % 1000000;
-
-    std::cout << "Current time: " 
-            << std::put_time(&local_time, "%a %b %e %Y %H:%M:%S")
-            << "." << std::setw(6) << std::setfill('0') << micros << std::endl;
+void print_PC_time(const std::pair<std::tm, long long>& timePair) {
+    const auto& time = timePair.first;
+    std::cout << "Timestamp: "
+              << time.tm_year + 1900 << " "
+              << time.tm_mon + 1 << " "
+              << time.tm_mday << " "
+              << time.tm_hour << ":"
+              << time.tm_min << ":"
+              << time.tm_sec << "."
+              << timePair.second
+              << std::endl;
 }
 
-void print_timestamps(const std::tm &local_time, int64_t camera_timestamp, int framecount) {
-    auto now = std::chrono::high_resolution_clock::now();
-    auto micros = std::chrono::duration_cast<std::chrono::microseconds>(now.time_since_epoch()).count();
+// Function to print the both PC time and camera timestamp with frame number
+void print_timestamps(const std::pair<std::tm, long long>& timePair, int64_t camera_timestamp, int framecount){
+    const auto& PCtime = timePair.first;
+    std::cout << "PC Time: " << PCtime.tm_year + 1900 << " " 
+        << PCtime.tm_mon + 1 << " " 
+        << PCtime.tm_mday << " "
+        << PCtime.tm_hour << ":"
+        << PCtime.tm_min << ":"
+        << PCtime.tm_sec << "."
+        << timePair.second << ", ";
+    std::cout << "Frame: " << framecount << ", Cam Timestamp: " << camera_timestamp / 1E9 << std::endl;
+}
 
-    // Print the PC time
-    std::cout << "Current time: " 
-            << std::put_time(&local_time, "%a %b %e %Y %H:%M:%S")
-            << "." << std::setw(6) << std::setfill('0') << micros % 1000000 << ", ";
 
-    // Print the camera timestamp
-    std::cout << "Frame: " << framecount << ", Cam Timestamp: " << camera_timestamp / 1E9 << std::endl; // divide by 1E9 to convert ticks to sec
+// Function to open the log file and write the header
+void openLogFile(const std::string& filename, double FPS_target, double FPS_set, const std::string& autoExposureMode, double exposureTime, int widthValue, int heightValue) {
+
+    logFile.open(filename);
+    if (logFile.is_open()) {
+        // Write header containing camera parameters
+        logFile << "Camera Parameters\n";
+        logFile << "FPS (Target)," << FPS_target << "\n";
+        logFile << "FPS (ACTUAL)," << FPS_set << "\n";
+        logFile << "Auto Exposure Mode," << autoExposureMode << "\n";
+        logFile << "Exposure Time," << exposureTime << "\n";
+        logFile << "Resolution," << widthValue << "x" << heightValue << "\n\n";
+
+        // Write column headers for timestamps
+        logFile << "Frame,PC Timestamp,Camera Time\n";
+    } else {
+        cerr << "Error opening log file: " << filename << endl;
+    }
+}
+
+
+// Function to log timestamps
+void logTimestamps(const std::pair<std::tm, long long>& timePair, int64_t camera_timestamp, int framecount){
+    const auto& PCtime = timePair.first;
+    // Log PC timestamp and camera timestamp
+    logFile << framecount << ","
+    << std::put_time(&PCtime, "%Y-%m-%d %H:%M:%S")
+        << "." << std::setw(6) << std::setfill('0') << timePair.second
+        << "," << camera_timestamp / 1E9 << "\n";
+}
+
+
+// Function to close the log file
+void closeLogFile() {
+    if (logFile.is_open()) {
+        logFile.close();
+    }
 }
 
 // ----------------------------------------------------------------------------------
@@ -231,37 +279,33 @@ int main(int argc, char** argv)
         // Open the video writer.
         videoWriter.Open( "test.mp4" );
 
+        // Set frame counter to zero
+        int64_t framecount = 0;
+        // camera.TimestampReset.Execute(); // **This timer reset function does not work?        // Start the grabbing of NumFrames images if specified, otherwise, grab continuously
+
+        // Get the PC time
+        auto local_time = get_PC_time();
+        print_PC_time(local_time);
+
+        // Get starting camera timestamp
+        camera.TimestampLatch.Execute();
+        int64_t ts_START = camera.TimestampLatchValue.GetValue();
+
+        print_timestamps(local_time, ts_START, framecount);
+
+        // Open log file
+        std::ostringstream filename;
+        const auto& time = local_time.first;
+        filename << "log_" << time.tm_year + 1900 << time.tm_mon + 1 << time.tm_mday << time.tm_hour << time.tm_min << time.tm_sec << ".csv";
+        cout << "Log file: " << filename.str() << endl;
+        openLogFile(filename.str(), FPS_target, FPS_set, autoExposureMode, exposureTime, (int)width.GetValue(), (int)height.GetValue());
+
         // Start the grabbing of c_countOfImagesToGrab images.
         // The camera device is parameterized with a default configuration which
         // sets up free-running continuous acquisition.
         camera.StartGrabbing(NumFrames);
 
         CGrabResultPtr ptrGrabResult;
-
-        // Set frame counter to zero
-        int64_t framecount = 0;
-        // camera.TimestampReset.Execute(); // **This timer reset function does not work?        // Start the grabbing of NumFrames images if specified, otherwise, grab continuously
-
-        // // Get the current system time
-        // auto now = std::chrono::high_resolution_clock::now();
-        // auto now_time_t = std::chrono::high_resolution_clock::to_time_t(now);
-        // std::tm *local_time = std::localtime(&now_time_t);
-        // auto micros = std::chrono::duration_cast<std::chrono::microseconds>(now.time_since_epoch()).count() % 1000000; // Extract microseconds
-        // // Print the time
-        // std::cout << "Current time: " 
-        //         << std::put_time(local_time, "%a %b %e %Y %H:%M:%S")
-        //         << "." << std::setw(6) << std::setfill('0') << micros << std::endl;
-
-        // Get the PC time
-        std::tm local_time = get_PC_time();
-        // print_PC_time(local_time);
-
-        // Get starting camera timestamp
-        camera.TimestampLatch.Execute();
-        int64_t ts_START = camera.TimestampLatchValue.GetValue();
-        // cout << "Frame: " << framecount << ", Start Cam Timestamp: " << ts_START / 1E9 << endl; // divide by 1E9 to convert ticks to sec
-
-        print_timestamps(local_time, ts_START, framecount);
     
         while (!stopFlag && (NumFrames == -1 || framecount < NumFrames))
         {
@@ -284,15 +328,10 @@ int main(int argc, char** argv)
                     int64_t ts = camera.TimestampLatchValue.GetValue();
                     
                     // Get PC time
-                    std::tm local_time = get_PC_time();
-
-                    // Print the PC time and camera timestamp
+                    auto local_time = get_PC_time();
                     print_timestamps(local_time, ts, framecount);
-
-                    /* Print timestamps separately... */
-                    // cout << "Frame: " << framecount << ", Cam Timestamp: " << ts / 1E9 << endl; // divide by 1E9 to convert ticks to sec
-                    // std::tm local_time = get_PC_time();
-                    // print_PC_time(local_time);
+                    // Write to log file
+                    logTimestamps(local_time, ts, framecount);
 
             }
             
@@ -320,6 +359,7 @@ int main(int argc, char** argv)
         exitCode = 1;
     }
 
+    closeLogFile()
 
     // ------------------------------------------------------------------------------
     // --EXIT PYLON------------------------------------------------------------------
