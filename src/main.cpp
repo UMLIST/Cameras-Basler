@@ -66,12 +66,13 @@ void print_timestamps(const std::pair<std::tm, long long>& timePair, int64_t cam
 
 
 // Function to open the log file and write the header
-void openLogFile(const std::string& filename, double FPS_target, double FPS_set, const std::string& autoExposureMode, double exposureTime, int widthValue, int heightValue) {
+void openLogFile(const std::string& filename, double FPS_target, double FPS_set, const std::string& autoExposureMode, double exposureTime, int widthValue, int heightValue, const std::string& camera_name) {
 
     logFile.open(filename);
     if (logFile.is_open()) {
         // Write header containing camera parameters
         logFile << "Camera Parameters\n";
+        logFile << "Camera Model," << camera_name << "\n";
         logFile << "FPS (Target)," << FPS_target << "\n";
         logFile << "FPS (ACTUAL)," << FPS_set << "\n";
         logFile << "Auto Exposure Mode," << autoExposureMode << "\n";
@@ -283,7 +284,8 @@ int main(int argc, char** argv)
         // --START CAM / VIDEO ----------------------------------------------------------
         // ------------------------------------------------------------------------------
         // Open the video writer.
-        videoWriter.Open( "test.mp4" );
+
+    
 
         // Set frame counter to zero
         int64_t framecount = 0;
@@ -309,7 +311,17 @@ int main(int argc, char** argv)
         const auto& time = local_time.first;
         filename << "log_" << time.tm_year + 1900 << time.tm_mon + 1 << time.tm_mday << time.tm_hour << time.tm_min << time.tm_sec << ".csv";
         cout << "Log file: " << filename.str() << endl;
-        openLogFile(filename.str(), FPS_target, FPS_set, autoExposureMode, exposureTime, (int)width.GetValue(), (int)height.GetValue());
+        std::string modelName = std::string(camera.GetDeviceInfo().GetModelName().c_str());
+        openLogFile(filename.str(), FPS_target, FPS_set, autoExposureMode, exposureTime, (int)width.GetValue(), (int)height.GetValue(), modelName);
+
+
+        // videoWriter.Open( "test.mp4" );
+        // Name video with timestamp
+
+        std::ostringstream videoFilename;
+        videoFilename << "video_" << time.tm_year + 1900 << time.tm_mon + 1 << time.tm_mday << time.tm_hour << time.tm_min << time.tm_sec << ".mp4";
+        Pylon::String_t videoFileNamePylon = videoFilename.str().c_str();
+        videoWriter.Open(videoFileNamePylon);
 
         // Start the grabbing of c_countOfImagesToGrab images.
         // The camera device is parameterized with a default configuration which
