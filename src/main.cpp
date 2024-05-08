@@ -78,7 +78,7 @@ void openLogFile(const std::string& filename, double FPS_target, double FPS_set,
         logFile << "FPS (ACTUAL)," << FPS_set << "\n";
         logFile << "Auto Exposure Mode," << autoExposureMode << "\n";
         logFile << "Exposure Time," << exposureTime << "\n";
-        logFile << "Resolution," << widthValue << "x" << heightValue << "\n\n";
+        logFile << "Resolution," << widthValue << "x" << heightValue << "\n\n" << std::flush;
 
         // Write column headers for timestamps
         logFile << "Frame,PC Timestamp,Camera Time\n";
@@ -95,7 +95,7 @@ void logTimestamps(const std::pair<std::tm, long long>& timePair, int64_t camera
     logFile << framecount << ","
     << std::put_time(&PCtime, "%Y-%m-%d %H:%M:%S")
         << "." << std::setw(6) << std::setfill('0') << timePair.second
-        << "," << std::fixed << std::setprecision(6) << camera_timestamp / 1E9 << "\n";
+        << "," << std::fixed << std::setprecision(6) << camera_timestamp / 1E9 << "\n" << std::flush;
 }
 
 
