@@ -376,7 +376,8 @@ int main(int argc, char** argv)
     cout << "NumFrames: " << NumFrames << endl;
 
     // Install signal handler for Ctrl+C
-    signal(SIGINT, signalHandler);
+    // signal(SIGINT, signalHandler);
+    signal(SIGTERM, signalHandler);
 
     // while (!stopFlag && (NumFrames == -1 || framecount < NumFrames))
     while (NumFrames == -1 || framecount < NumFrames)
