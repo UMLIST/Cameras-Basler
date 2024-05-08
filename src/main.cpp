@@ -126,29 +126,34 @@ int main(int argc, char** argv)
     // Parse command line arguments
     for (int i = 1; i < argc; ++i) {
         string arg = argv[i];
-        if (arg == "-fps" && i + 1 < argc) {
+        if (arg == "--fps" && i + 1 < argc) {
             FPS = atof(argv[i + 1]);
-        } else if (arg == "-frames" && i + 1 < argc) {
+        } else if (arg == "--frames" && i + 1 < argc) {
             NumFrames = atoi(argv[i + 1]) + 1;
-        } else if (arg == "-autoexposure" && i + 1 < argc) {
+        } else if (arg == "--autoexposure" && i + 1 < argc) {
             autoExposureMode = argv[i + 1];
-        } else if (arg == "-exposuretime" && i + 1 < argc) {
+        } else if (arg == "--exposuretime" && i + 1 < argc) {
             exposureTime = atof(argv[i + 1]);
-        } else if  (arg == "-crop1080") {
+        } else if  (arg == "--crop1080") {
             crop1080 = true;
-        } else if  (arg == "-crop720") {
+        } else if  (arg == "--crop720") {
             crop720 = true;
-        } else if (arg == "-name" && i + 1 < argc) {
+        } else if (arg == "--name" && i + 1 < argc) {
             // string for name of current test
             testID = argv[i + 1];
         }
     }
-    
-    // Check if mandatory argument FPS is provided
-    if (FPS == -1) {
-        cerr << "FPS is a mandatory argument." << endl;
+    // Check for errors
+    if ((testID == "") || (FPS == -1)  || ((autoExposureMode == "Off") && (exposureTime == -1))) {
+        cerr << "Usage: " << argv[0] << " --fps <FPS> --name <TestID> [--frames <NumFrames>] [--autoexposure <AutoExposureMode>] [--exposuretime <ExposureTime>] [--crop1080] [--crop720]" << endl;
         return 1;
     }
+    
+    // // Check if mandatory argument FPS is provided
+    // if (FPS == -1) {
+    //     cerr << "FPS is a mandatory argument." << endl;
+    //     return 1;
+    // }
 
     // ------------------------------------------------------------------------------
     // --INIT PYLON------------------------------------------------------------------
