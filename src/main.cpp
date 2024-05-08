@@ -26,7 +26,10 @@ volatile sig_atomic_t stopFlag = 0;
 
 // Signal handler for Ctrl+C
 void signalHandler(int signal) {
-    stopFlag = 1;
+    // stopFlag = 1;
+    if (signal == SIGINT || signal == SIGTERM) {
+        stopFlag = 1;
+    }
 }
 
 std::pair<std::tm, long long> get_PC_time() {
