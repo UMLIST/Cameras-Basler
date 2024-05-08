@@ -12,6 +12,7 @@
 #include <csignal>
 #include <chrono>
 #include <ctime>
+#include <cstdlib>
 
 using namespace Pylon;
 using namespace std;
@@ -137,7 +138,7 @@ int main(int argc, char** argv)
             crop1080 = true;
         } else if  (arg == "-crop720") {
             crop720 = true;
-        } else if (arg == "-testID" && i + 1 < argc) {
+        } else if (arg == "-name" && i + 1 < argc) {
             // string for name of current test
             testID = argv[i + 1];
         }
@@ -311,7 +312,10 @@ int main(int argc, char** argv)
         print_timestamps(local_time, ts_START, framecount);
 
         // Make folder for testID if it does not exist already in ~/Documents/Data
-        string folderName = "~/Documents/Data/" + testID;
+        // Get home directory path
+        std::string homeDir = getenv("HOME");
+        // string folderName = "~/Documents/Data/" + testID;
+        string folderName = homeDir + "/Documents/Data/" + testID + "/";
         string command = "mkdir -p " + folderName;
         system(command.c_str());
 
@@ -328,7 +332,7 @@ int main(int argc, char** argv)
         // Name video with timestamp
 
         std::ostringstream videoFilename;
-        videoFilename << "video_" << time.tm_year + 1900 << time.tm_mon + 1 << time.tm_mday << time.tm_hour << time.tm_min << time.tm_sec << ".mp4";
+        videoFilename << folderName << "video_" << time.tm_year + 1900 << time.tm_mon + 1 << time.tm_mday << time.tm_hour << time.tm_min << time.tm_sec << ".mp4";
         Pylon::String_t videoFileNamePylon = videoFilename.str().c_str();
         videoWriter.Open(videoFileNamePylon);
 
