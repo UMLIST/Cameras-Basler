@@ -120,6 +120,7 @@ int main(int argc, char** argv)
     double exposureTime = -1; // Default value for exposureTime
     bool crop1080 = false; // Default value for crop1080
     bool crop720 = false; // Default value for crop720
+    string testID = ""; // Default value for testID
     
     // Parse command line arguments
     for (int i = 1; i < argc; ++i) {
@@ -136,6 +137,9 @@ int main(int argc, char** argv)
             crop1080 = true;
         } else if  (arg == "-crop720") {
             crop720 = true;
+        } else if (arg == "-testID" && i + 1 < argc) {
+            // string for name of current test
+            testID = argv[i + 1];
         }
     }
     
@@ -306,10 +310,15 @@ int main(int argc, char** argv)
 
         print_timestamps(local_time, ts_START, framecount);
 
+        // Make folder for testID if it does not exist already in ~/Documents/Data
+        string folderName = "~/Documents/Data/" + testID;
+        string command = "mkdir -p " + folderName;
+        system(command.c_str());
+
         // Open log file
         std::ostringstream filename;
         const auto& time = local_time.first;
-        filename << "videolog_" << time.tm_year + 1900 << time.tm_mon + 1 << time.tm_mday << time.tm_hour << time.tm_min << time.tm_sec << ".csv";
+        filename << folderName << "videolog_" << time.tm_year + 1900 << time.tm_mon + 1 << time.tm_mday << time.tm_hour << time.tm_min << time.tm_sec << ".csv";
         cout << "Log file: " << filename.str() << endl;
         std::string modelName = std::string(camera.GetDeviceInfo().GetModelName().c_str());
         openLogFile(filename.str(), FPS_target, FPS_set, autoExposureMode, exposureTime, (int)width.GetValue(), (int)height.GetValue(), modelName);
