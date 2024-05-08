@@ -330,7 +330,14 @@ int main(int argc, char** argv)
         // Open log file
         std::ostringstream filename;
         const auto& time = local_time.first;
-        filename << folderName << "videolog_" << time.tm_year + 1900 << time.tm_mon + 1 << time.tm_mday << time.tm_hour << time.tm_min << time.tm_sec << ".csv";
+        // filename << folderName << "videolog_" << time.tm_year + 1900 << time.tm_mon + 1 << time.tm_mday << time.tm_hour << time.tm_min << time.tm_sec << ".csv";
+        filename << folderName << "videolog_" 
+            << std::setw(4) << std::setfill('0') << time.tm_year + 1900 
+            << std::setw(2) << std::setfill('0') << time.tm_mon + 1 
+            << std::setw(2) << std::setfill('0') << time.tm_mday 
+            << std::setw(2) << std::setfill('0') << time.tm_hour 
+            << std::setw(2) << std::setfill('0') << time.tm_min 
+            << std::setw(2) << std::setfill('0') << time.tm_sec << ".csv";
         cout << "Log file: " << filename.str() << endl;
         std::string modelName = std::string(camera.GetDeviceInfo().GetModelName().c_str());
         openLogFile(filename.str(), FPS_target, FPS_set, autoExposureMode, exposureTime, (int)width.GetValue(), (int)height.GetValue(), modelName);
@@ -340,7 +347,14 @@ int main(int argc, char** argv)
         // Name video with timestamp
 
         std::ostringstream videoFilename;
-        videoFilename << folderName << "video_" << time.tm_year + 1900 << time.tm_mon + 1 << time.tm_mday << time.tm_hour << time.tm_min << time.tm_sec << ".mp4";
+        // videoFilename << folderName << "video_" << time.tm_year + 1900 << time.tm_mon + 1 << time.tm_mday << time.tm_hour << time.tm_min << time.tm_sec << ".mp4";
+        videoFilename << folderName << "video_" 
+            << std::setw(4) << std::setfill('0') << time.tm_year + 1900 
+            << std::setw(2) << std::setfill('0') << time.tm_mon + 1 
+            << std::setw(2) << std::setfill('0') << time.tm_mday 
+            << std::setw(2) << std::setfill('0') << time.tm_hour 
+            << std::setw(2) << std::setfill('0') << time.tm_min 
+            << std::setw(2) << std::setfill('0') << time.tm_sec << ".mp4";
         Pylon::String_t videoFileNamePylon = videoFilename.str().c_str();
         videoWriter.Open(videoFileNamePylon);
 
