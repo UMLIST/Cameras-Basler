@@ -409,6 +409,9 @@ int main(int argc, char** argv)
 
         }
 
+        closeLogFile();
+        cout << "Video recording finished." << endl;
+
     }
     catch (const GenericException& e) 
     {
@@ -417,7 +420,7 @@ int main(int argc, char** argv)
         exitCode = 1;
     }
 
-    closeLogFile();
+    // closeLogFile();
 
     // ------------------------------------------------------------------------------
     // --EXIT PYLON------------------------------------------------------------------
