@@ -309,7 +309,7 @@ int main(int argc, char** argv)
         // Open log file
         std::ostringstream filename;
         const auto& time = local_time.first;
-        filename << "log_" << time.tm_year + 1900 << time.tm_mon + 1 << time.tm_mday << time.tm_hour << time.tm_min << time.tm_sec << ".csv";
+        filename << "videolog_" << time.tm_year + 1900 << time.tm_mon + 1 << time.tm_mday << time.tm_hour << time.tm_min << time.tm_sec << ".csv";
         cout << "Log file: " << filename.str() << endl;
         std::string modelName = std::string(camera.GetDeviceInfo().GetModelName().c_str());
         openLogFile(filename.str(), FPS_target, FPS_set, autoExposureMode, exposureTime, (int)width.GetValue(), (int)height.GetValue(), modelName);
