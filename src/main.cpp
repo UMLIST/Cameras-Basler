@@ -230,6 +230,7 @@ int main(int argc, char** argv)
     }
     else {
         cout << "FPS set to " << FPS_set << endl;
+        FPS_set = FPS_target;
     }
 
 
